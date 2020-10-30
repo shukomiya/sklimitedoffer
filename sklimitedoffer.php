@@ -4,11 +4,13 @@
  * Plugin URI: http://devdiary.komish.com/
  * Description: 期間限定ページの作成支援
  * Author: Komiya Shuuichi
- * version: 0.3.3
+ * version: 0.3.4
  * Author URI: http://devdiary.komish.com/
  */
 
 /*
+version 0.3.4	2020/01/29
+	修正）Date関数をDate_i18n関数に置換
 version 0.3.3	2019/11/24
 	修正）パラメーターを指定したときのロジックが狂っていた。
 version 0.3.2	2018/11/10
@@ -28,8 +30,6 @@ version 0.1.2
 	修正）期限切れにならない
 */
 
-//date_default_timezone_set('Asia/Tokyo');
-
 class sklimitedoffer_t {
 	private $is_campin = false;
 	private $interval = 0;
@@ -39,7 +39,8 @@ class sklimitedoffer_t {
 	private $table_name = '';
 	private $is_url_drive = false;
 	private $one_time = false;
-	
+	private $timezone;
+		
 	public function __construct() {
 		global $wpdb;
 
@@ -49,6 +50,7 @@ class sklimitedoffer_t {
         $this->limit_date = '';
 		$this->is_url_drive = false;
 		$this->one_time = false;
+		$this->timezone = new DateTimeZone('Asia/Tokyo');
 		self::install();
 	}
 	
@@ -69,16 +71,16 @@ class sklimitedoffer_t {
 			}
 		} else {
 			if ($begin === 0) {
-				$now = date( "Y/m/d H:i:s" );
-				$close = date( "Y/m/d H:i:s", strtotime( $end . ' +1 day' ) );
+				$now = date_i18n( "Y/m/d H:i:s" );
+				$close = date_i18n( "Y/m/d H:i:s", strtotime( $end . ' +1 day' ) );
 			    if ( strtotime($now) <= strtotime($close) ) {
 					return true;
 				}else{
 					return false;
 				}
 			} else if ($end === 0){
-				$now = date( "Y/m/d H:i:s" );
-				$open = date( "Y/m/d H:i:s", strtotime( $begin ) );
+				$now = date_i18n( "Y/m/d H:i:s" );
+				$open = date_i18n( "Y/m/d H:i:s", strtotime( $begin ) );
 			    if ( strtotime($open) <= strtotime($now) ) {
 					return true;
 				}else{
@@ -87,9 +89,9 @@ class sklimitedoffer_t {
 			}
 		}
 		
-		$now = date( "Y/m/d H:i:s" );
-		$open = date( "Y/m/d H:i:s", strtotime( $begin ) );
-		$close = date( "Y/m/d H:i:s", strtotime( $end . ' +1 day' ) );
+		$now = date_i18n( "Y/m/d H:i:s" );
+		$open = date_i18n( "Y/m/d H:i:s", strtotime( $begin ) );
+		$close = date_i18n( "Y/m/d H:i:s", strtotime( $end . ' +1 day' ) );
 		
 	    if ( strtotime($open) <= strtotime($now) && strtotime($now) <= strtotime($close) ) {
 			return true;
@@ -172,7 +174,7 @@ class sklimitedoffer_t {
 				return false;
 				
 			$end_date = new DateTime($row['limit_date'], new DateTimeZone('Asia/Tokyo'));
-			$now = new DateTime( date('Y/m/d'), new DateTimeZone('Asia/Tokyo') );
+			$now = new DateTime( date_i18n('Y/m/d'), new DateTimeZone('Asia/Tokyo') );
 			
 			if ($now <= $end_date){
 				return true;
@@ -188,14 +190,14 @@ class sklimitedoffer_t {
 				$current_date = new DateTime( $current_date_str, new DateTimeZone('Asia/Tokyo') );
 			} else {
 				//日付が未設定なら今日を基準にする
-				$current_date = new DateTime(date('Y/m/d'), new DateTimeZone('Asia/Tokyo'));
+				$current_date = new DateTime(date_i18n('Y/m/d'), new DateTimeZone('Asia/Tokyo'));
 			}
 			$end_date = $current_date->modify("+$this->interval day");
 			$this->limit_date = $end_date->format('Y/m/d');
 
 			$line['limit_date'] = $this->limit_date;
 			$end_date = new DateTime($line['limit_date'], new DateTimeZone('Asia/Tokyo'));
-			$now = new DateTime( date('Y/m/d'), new DateTimeZone('Asia/Tokyo') );
+			$now = new DateTime( date_i18n('Y/m/d'), new DateTimeZone('Asia/Tokyo') );
 
 			$query = 'INSERT INTO `' . $this->table_name 
 					. '` (`id`, `postid`, `email`, `limit_date`, `reg_date`) VALUES (NULL, %d, %s, %s, %s);';
@@ -236,7 +238,7 @@ class sklimitedoffer_t {
 		if ($str === '1'){
 			$this->is_url_drive = true;
 			$this->interval = 1;
-			$this->limit_date = date('Y/m/d');
+			$this->limit_date = date_i18n('Y/m/d');
 			$this->is_campin = true;
 			return;
 		}
@@ -321,11 +323,11 @@ function sk_get_limit_date( $atts, $content = null ){
 	if ( empty( $end) )
 		return '';
 		
-	$close = date( "Y/m/d", strtotime( $end ) );
-	$s = date( 'n月j日', strtotime( $close ) );
+	$close = date_i18n( "Y/m/d", strtotime( $end ) );
+	$s = date_i18n( 'n月j日', strtotime( $close ) );
 	if ($yb === 1){
 		$week = array( "日", "月", "火", "水", "木", "金", "土" );
-		$w = '(' . $week[date("w", strtotime( $close ))] . ')';
+		$w = '(' . $week[date_i18n("w", strtotime( $close ))] . ')';
 	}else{
 		$w ='';
 	}
